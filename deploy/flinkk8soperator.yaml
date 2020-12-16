@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: flinkoperator
-  namespace: flink-operator
+  namespace: detectors
   labels:
     app: flinkoperator
 spec:
@@ -14,38 +14,43 @@ spec:
     metadata:
       labels:
         app: flinkoperator
-        app.kubernetes.io/version: 0.5.0
+        app.kubernetes.io/version: b5eb19657df91782e51028019e89a7c1badd30d1
     spec:
+      enableServiceLinks: false
       serviceAccountName: flinkoperator
       volumes:
-      - name: config-volume
-        configMap:
-          name: flink-operator-config
-          items:
-          - key: config
-            path: config.yaml
-      containers:
-      - name: flinkoperator-gojson
-        image: docker.io/lyft/flinkk8soperator:v0.5.0
-        command:
-        - flinkoperator
-        args:
-        - --logtostderr
-        - --config
-        - /etc/flinkoperator/config*/config.yaml
-        env:
-        - name: OPERATOR_NAME
-          value: flinkk8soperator
-        imagePullPolicy: IfNotPresent
-        ports:
-          - containerPort: 10254
-        resources:
-          requests:
-            memory: "4Gi"
-            cpu: "4"
-          limits:
-            memory: "8G"
-            cpu: "8"
-        volumeMounts:
         - name: config-volume
-          mountPath: /etc/flinkoperator/config
+          configMap:
+            name: flink-operator-config
+            items:
+              - key: config
+                path: config.yaml
+      containers:
+        - name: flinkoperator-gojson
+          image: docker.io/lyft/flinkk8soperator:b5eb19657df91782e51028019e89a7c1badd30d1
+          command:
+            - flinkoperator
+          args:
+            - --logtostderr
+            - --config
+            - /etc/flinkoperator/config*/config.yaml
+          env:
+            - name: OPERATOR_NAME
+              value: flinkk8soperator
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 10254
+          resources:
+            requests:
+              memory: "12Gi"
+              cpu: "6"
+            limits:
+              memory: "15Gi"
+              cpu: "8"
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/flinkoperator/config
+      tolerations:
+        - key: "role"
+          operator: "Equal"
+          value: "ppd-infra"
